@@ -1,0 +1,4 @@
+tflite-runtime==2.14.0
+onnxruntime==1.19.2
+torch==2.4.1
+numpy==1.26.4

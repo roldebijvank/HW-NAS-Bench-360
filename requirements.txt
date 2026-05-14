@@ -1,0 +1,18 @@
+# Core
+torch==2.11.0
+torchvision==0.26.0
+onnxscript
+
+# NAS-Bench-201 API
+nas-bench-201
+
+# litert-torch: stable on Linux (RPi), nightly on macOS ARM
+litert-torch; sys_platform != 'darwin' or platform_machine != 'arm64'
+litert-torch-nightly; sys_platform == 'darwin' and platform_machine == 'arm64'
+
+# Data / analysis
+numpy==2.4.4
+pandas==3.0.2
+scipy==1.17.1
+matplotlib==3.10.9
+jupyter==1.1.1

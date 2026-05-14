@@ -1,0 +1,28 @@
+[project]
+name = "hwnas360"
+version = "0.1.0"
+description = "HW-NAS-Bench-360 measurement pipeline"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "ipykernel",
+    # TensorFlow: stable everywhere except macOS ARM
+    "tensorflow; sys_platform != 'darwin' or platform_machine != 'arm64'",
+    "tf_keras; sys_platform != 'darwin' or platform_machine != 'arm64'",
+    "tf-nightly; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    # litert-torch: stable on Linux (RPi), nightly on macOS ARM
+    "litert_torch; sys_platform != 'darwin' or platform_machine != 'arm64'",
+    "litert-torch-nightly; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    # tflite-runtime: inference runtime on device (Linux only)
+    "tflite-runtime; sys_platform == 'linux'",
+    "tflite",
+    "torch==2.11.0",
+    "torchvision==0.26.0",
+    "numpy==2.4.4",
+    "pandas==3.0.2",
+    "scipy==1.17.1",
+    "jupyter==1.1.1",
+]
+
+[tool.uv]
+package = false
+required-environments = ["sys_platform == 'darwin' and platform_machine == 'arm64'"]
