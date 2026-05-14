@@ -1,6 +1,4 @@
-"""Per-arch export to TFLite, ONNX, TorchScript-mobile at native task shape.
-Drops the 32x32 resize from the earlier version.
-"""
+"""Per-arch export to TFLite, ONNX, TorchScript-mobile at native task shape."""
 from pathlib import Path
 import gc
 import torch, torch.nn as nn
@@ -27,7 +25,8 @@ def export_tflite(arch_idx, input_shape, num_classes, out_path):
   edge = litert_torch.convert(net, (sample,))
   edge.export(str(out_path))
   size = out_path.stat().st_size
-  del net, sample, edge; gc.collect()
+  del net, sample, edge
+  gc.collect()
   return size
 
 
@@ -37,16 +36,19 @@ def export_onnx(arch_idx, input_shape, num_classes, out_path):
                     input_names=["input"], output_names=["logits"], opset_version=17,
                     dynamo=False)
   size = out_path.stat().st_size
-  del net, sample; gc.collect()
+  del net, sample
+  gc.collect()
   return size
 
 
 def export_torchmobile(arch_idx, input_shape, num_classes, out_path):
   net, sample = _wrap(arch_idx, input_shape, num_classes)
   traced = torch.jit.trace(net, sample)
-  optimize_for_mobile(traced)._save_for_lite_interpreter(str(out_path))
+  optimized = optimize_for_mobile(traced)
+  optimized._save_for_lite_interpreter(str(out_path))
   size = out_path.stat().st_size
-  del net, sample, traced; gc.collect()
+  del net, sample, traced, optimized
+  gc.collect()
   return size
 
 

@@ -9,9 +9,6 @@ resolution-markers = [
     "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
-required-markers = [
-    "platform_machine == 'arm64' and sys_platform == 'darwin'",
-]
 
 [[package]]
 name = "absl-py"
@@ -57,12 +54,12 @@ name = "ai-edge-litert-nightly"
 version = "2.2.0.dev20260426"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "backports-strenum", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "flatbuffers", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "numpy", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "protobuf", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "tqdm", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "typing-extensions", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "backports-strenum" },
+    { name = "flatbuffers" },
+    { name = "numpy" },
+    { name = "protobuf" },
+    { name = "tqdm" },
+    { name = "typing-extensions" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a9/f6/46a2c6205e5a5afaec2939be54c18fd4bcb0b2b392e69df4d8fa8d8fb139/ai_edge_litert_nightly-2.2.0.dev20260426-cp311-cp311-macosx_12_0_arm64.whl", hash = "sha256:a613df3fe0dc9c3a25f4442d8757c8f8e2f1ab00aabb3d2ef930229d8506d972", size = 9587220, upload-time = "2026-04-27T04:51:42.021Z" },
@@ -71,9 +68,9 @@ wheels = [
 
 [package.optional-dependencies]
 model-utils = [
-    { name = "lark", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "ml-dtypes", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "xdsl", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "lark" },
+    { name = "ml-dtypes" },
+    { name = "xdsl" },
 ]
 
 [[package]]
@@ -97,11 +94,11 @@ name = "ai-edge-quantizer-nightly"
 version = "0.7.0.dev20260427"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "absl-py", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "ai-edge-litert-nightly", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "immutabledict", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "ml-dtypes", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "numpy", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "absl-py" },
+    { name = "ai-edge-litert-nightly" },
+    { name = "immutabledict" },
+    { name = "ml-dtypes" },
+    { name = "numpy" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ef/d6/f34c264fd61d6bbc168107438dbc9e47b162cbd9cf3c240f6f79fe8cb6a4/ai_edge_quantizer_nightly-0.7.0.dev20260427.tar.gz", hash = "sha256:0ece1af65d7d8550bcd18c050cac25950b8252f7e761e9e35757989621d07b2c", size = 210084, upload-time = "2026-04-27T00:28:32.321Z" }
 wheels = [
@@ -1226,14 +1223,14 @@ name = "keras-nightly"
 version = "3.15.0.dev2026042705"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "absl-py", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "h5py", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "ml-dtypes", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "namex", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "numpy", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "optree", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "packaging", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "rich", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "absl-py" },
+    { name = "h5py" },
+    { name = "ml-dtypes" },
+    { name = "namex" },
+    { name = "numpy" },
+    { name = "optree" },
+    { name = "packaging" },
+    { name = "rich" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/7c/56/fa8b9f19f8c07339a6ef57d67d429ce374e9be8182e1924ea4452632fce1/keras_nightly-3.15.0.dev2026042705.tar.gz", hash = "sha256:e3c4bc224c3316e62f96c9d04154670651568f995eab4e3915cf92d697462fa1", size = 1286152, upload-time = "2026-04-27T05:09:29.487Z" }
 wheels = [
@@ -1321,24 +1318,24 @@ name = "litert-torch-nightly"
 version = "0.10.0.dev20260427"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "absl-py", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "ai-edge-litert-nightly", extra = ["model-utils"], marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "ai-edge-quantizer-nightly", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "fire", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "jax", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "jaxtyping", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "kagglehub", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "litert-converter", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "multipledispatch", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "numpy", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "rich", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "safetensors", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "scipy", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "sentencepiece", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "tabulate", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "torch", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "torchao", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "transformers", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "absl-py" },
+    { name = "ai-edge-litert-nightly", extra = ["model-utils"] },
+    { name = "ai-edge-quantizer-nightly" },
+    { name = "fire" },
+    { name = "jax" },
+    { name = "jaxtyping" },
+    { name = "kagglehub" },
+    { name = "litert-converter" },
+    { name = "multipledispatch" },
+    { name = "numpy" },
+    { name = "rich" },
+    { name = "safetensors" },
+    { name = "scipy" },
+    { name = "sentencepiece" },
+    { name = "tabulate" },
+    { name = "torch" },
+    { name = "torchao" },
+    { name = "transformers" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/13/6e/ecc7ac1e62d1ef12a86d4507188125c41d33e3fb614a3d8911452a86b3a2/litert_torch_nightly-0.10.0.dev20260427-py3-none-any.whl", hash = "sha256:4de9cf8c15dea0f938a21717fba388dba262728946f3d5e076eb7465ebfde43c", size = 571045, upload-time = "2026-04-27T10:51:29.985Z" },
@@ -2513,26 +2510,26 @@ name = "tf-nightly"
 version = "2.22.0.dev20260427"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "absl-py", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "astunparse", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "flatbuffers", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "gast", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "google-pasta", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "grpcio", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "h5py", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "keras-nightly", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "libclang", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "ml-dtypes", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "numpy", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "opt-einsum", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "packaging", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "protobuf", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "requests", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "setuptools", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "six", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "termcolor", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "typing-extensions", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "wrapt", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "absl-py" },
+    { name = "astunparse" },
+    { name = "flatbuffers" },
+    { name = "gast" },
+    { name = "google-pasta" },
+    { name = "grpcio" },
+    { name = "h5py" },
+    { name = "keras-nightly" },
+    { name = "libclang" },
+    { name = "ml-dtypes" },
+    { name = "numpy" },
+    { name = "opt-einsum" },
+    { name = "packaging" },
+    { name = "protobuf" },
+    { name = "requests" },
+    { name = "setuptools" },
+    { name = "six" },
+    { name = "termcolor" },
+    { name = "typing-extensions" },
+    { name = "wrapt" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2b/7f/1eb4a041597f8c1e17b7ae2dab74f94e2df51c3755d18cee148e1696c72e/tf_nightly-2.22.0.dev20260427-cp311-cp311-macosx_12_0_arm64.whl", hash = "sha256:41ca9da38e01459c2e07f6c1b21685bdd2a37bc75982a8b9e1245483b4582c47", size = 235068466, upload-time = "2026-04-27T16:09:58.442Z" },
@@ -2557,7 +2554,7 @@ name = "tflite-runtime"
 version = "2.14.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "numpy" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8f/a6/02d68cb62cd221589a0ff055073251d883936237c9c990e34a1d7cecd06f/tflite_runtime-2.14.0-cp311-cp311-manylinux2014_x86_64.whl", hash = "sha256:195ab752e7e57329a68e54dd3dd5439fad888b9bff1be0f0dc042a3237a90e4d", size = 2414486, upload-time = "2023-10-03T21:15:44.331Z" },

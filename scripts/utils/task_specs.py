@@ -4,7 +4,7 @@ Used by host (export) and Pi daemon (random input shape).
 from pathlib import Path
 import pickle
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 
 NB201_API_FILE = ROOT / "data" / "nas-bench-201" / "NAS-Bench-201-v1_1-096897.pth"
 
@@ -92,3 +92,9 @@ def load_accuracies(task):
     return out
 
   raise ValueError(f"unknown acc_source: {src}")
+
+
+if __name__ == "__main__":
+  for t in TASKS:
+    a = load_accuracies(t)
+    print(f"{t}: {0 if a is None else len(a)} entries")

@@ -1,19 +1,15 @@
-"""Read results/latency_rpi.csv from Pi, join with per-task accuracies,
-write results/hwnas_bench_360_v1.csv with acc column added.
-"""
+"""Join per-(device,arch,task,runtime) latency rows with per-task accuracies."""
 from pathlib import Path
 import csv, argparse
 
-import sys
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "scripts"))
-
 from scripts.utils.task_specs import TASKS, load_accuracies
+
+ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 def main():
   ap = argparse.ArgumentParser()
-  ap.add_argument("--lat",  default=str(ROOT / "results" / "latency_rpi.csv"))
+  ap.add_argument("--lat",  default=str(ROOT / "results" / "latency.csv"))
   ap.add_argument("--out",  default=str(ROOT / "results" / "hwnas_bench_360_v1.csv"))
   args = ap.parse_args()
 

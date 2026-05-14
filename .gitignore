@@ -34,6 +34,7 @@ dist/
 # Project outputs
 /artifacts/
 /results/*.csv
+/results/completed_*.txt
 /scripts/models/*.tflite
 
 # Large data (fetch out-of-band)
