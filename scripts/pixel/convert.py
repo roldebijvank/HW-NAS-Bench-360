@@ -6,6 +6,7 @@ Run as module so imports work:
 """
 import argparse
 import multiprocessing as mp
+import os
 import signal
 import subprocess
 import sys
@@ -97,7 +98,7 @@ def main():
   ap.add_argument("--start", type=int, default=0)
   ap.add_argument("--all", action="store_true")
   ap.add_argument("--overwrite", action="store_true")
-  ap.add_argument("--workers", type=int, default=8)
+  ap.add_argument("--workers", type=int, default=os.cpu_count() or 8)
   args = ap.parse_args()
 
   r = adb("get-state")

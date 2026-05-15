@@ -83,9 +83,12 @@ def render_progress(done, total, ok, skipped, err, width=30):
           f"ok={ok} skip={skipped} err={err}")
 
 
-def show_progress(done, total, ok, skipped, err, final=False):
+def show_progress(done, total, ok, skipped, err, final=False, stream=None):
   end = "\n" if final else ""
-  print(render_progress(done, total, ok, skipped, err), end=end, flush=True)
+  if stream is None:
+    stream = sys.stdout
+  print(render_progress(done, total, ok, skipped, err),
+        end=end, flush=True, file=stream)
 
 
 def silence_torch_elastic_redirects():

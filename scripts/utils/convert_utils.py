@@ -1,11 +1,14 @@
 """Per-arch export to TFLite, ONNX, TorchScript-mobile at native task shape."""
-from pathlib import Path
 import gc
+import logging
 import torch, torch.nn as nn
 import litert_torch
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
 from scripts.utils.model_utils import build_model
+
+
+logging.getLogger("torch.distributed.elastic.multiprocessing.redirects").disabled = True
 
 
 class LogitsOnly(nn.Module):
@@ -22,8 +25,9 @@ def _wrap(arch_idx, input_shape, num_classes):
 
 def export_tflite(arch_idx, input_shape, num_classes, out_path):
   net, sample = _wrap(arch_idx, input_shape, num_classes)
-  edge = litert_torch.convert(net, (sample,))
-  edge.export(str(out_path))
+  with torch.no_grad():
+    edge = litert_torch.convert(net, (sample,))
+    edge.export(str(out_path))
   size = out_path.stat().st_size
   del net, sample, edge
   gc.collect()
@@ -32,9 +36,10 @@ def export_tflite(arch_idx, input_shape, num_classes, out_path):
 
 def export_onnx(arch_idx, input_shape, num_classes, out_path):
   net, sample = _wrap(arch_idx, input_shape, num_classes)
-  torch.onnx.export(net, sample, str(out_path),
-                    input_names=["input"], output_names=["logits"], opset_version=17,
-                    dynamo=False)
+  with torch.no_grad():
+    torch.onnx.export(net, sample, str(out_path),
+                      input_names=["input"], output_names=["logits"], opset_version=17,
+                      dynamo=False)
   size = out_path.stat().st_size
   del net, sample
   gc.collect()
@@ -43,9 +48,10 @@ def export_onnx(arch_idx, input_shape, num_classes, out_path):
 
 def export_torchmobile(arch_idx, input_shape, num_classes, out_path):
   net, sample = _wrap(arch_idx, input_shape, num_classes)
-  traced = torch.jit.trace(net, sample)
-  optimized = optimize_for_mobile(traced)
-  optimized._save_for_lite_interpreter(str(out_path))
+  with torch.no_grad():
+    traced = torch.jit.trace(net, sample)
+    optimized = optimize_for_mobile(traced)
+    optimized._save_for_lite_interpreter(str(out_path))
   size = out_path.stat().st_size
   del net, sample, traced, optimized
   gc.collect()

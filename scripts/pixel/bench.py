@@ -1,7 +1,7 @@
 """Phase 2 (Pixel): bench every arch dir already on device.
 
 For each arch_<N>/ under /data/local/tmp/archs (or selection), and for each task,
-pre-gates 45C, runs BenchmarkModelActivity (10 warmup + 40 timed, GPU delegate),
+pre-gates 45C, runs BenchmarkModelActivity (10 warmup + 40 timed, GPU delegate by default),
 parses Inference (avg)+std from logcat, appends to results/latency.csv and
 results/completed_pixel.txt. Does NOT delete arch dirs.
 
@@ -35,7 +35,9 @@ THERMAL_ZONE   = "/sys/class/thermal/thermal_zone0/temp"
 
 BENCH_ACTIVITY = "org.tensorflow.lite.benchmark/.BenchmarkModelActivity"
 BENCH_PKG      = "org.tensorflow.lite.benchmark"
-GPU_ARGS = ["--use_gpu=true", "--num_threads=1", "--cpu_mask=f0"]
+BASE_ARGS = ["--num_threads=1", "--cpu_mask=f0"]
+GPU_ARGS = ["--use_gpu=true", *BASE_ARGS]
+NPU_ARGS = ["--use_nnapi=true", *BASE_ARGS]
 
 _AVG_RE = re.compile(r"Inference \(avg\):\s*([\d.]+)")
 _STD_RE = re.compile(r"Inference \(std deviation\):\s*([\d.]+)")
@@ -88,24 +90,25 @@ def list_device_archs():
   return sorted(out)
 
 
-def wait_for_summary(timeout_s=300, poll_s=1.0):
+def wait_for_summary(timeout_s=120, poll_s=1.0):
   t_end = time.time() + timeout_s
   while time.time() < t_end:
-    out = adb_shell("logcat -d -s tflite").stdout
+    out = adb_shell("logcat -d").stdout
     m_avg = _AVG_RE.search(out)
     m_std = _STD_RE.search(out)
-    if m_avg and m_std:
-      return float(m_avg.group(1)) / 1000.0, float(m_std.group(1)) / 1000.0
+    if m_avg:
+      std_ms = float(m_std.group(1)) / 1000.0 if m_std else None
+      return (float(m_avg.group(1)) / 1000.0, std_ms)
     time.sleep(poll_s)
-  raise TimeoutError("timed out waiting for Inference avg+std in logcat")
+  raise TimeoutError("timed out waiting for Inference avg in logcat")
 
 
-def bench_task(model_path):
+def bench_task(model_path, delegate_args):
   args_str = " ".join([
     f"--graph={model_path}",
     f"--warmup_runs={WARMUP}",
     f"--num_runs={TIMED}",
-    *GPU_ARGS,
+    *delegate_args,
   ])
   adb_shell("logcat -c", check=True)
   adb_shell(f'am start -S -W -n {BENCH_ACTIVITY} --es args "{args_str}"', check=True)
@@ -121,7 +124,12 @@ def main():
   ap.add_argument("--arch-list", type=Path, default=None)
   ap.add_argument("--limit", type=int, default=None)
   ap.add_argument("--start", type=int, default=0)
+  ap.add_argument("--use-npu", action="store_true",
+                  help="Use NNAPI delegate instead of GPU")
   args = ap.parse_args()
+
+  delegate_args = NPU_ARGS if args.use_npu else GPU_ARGS
+  runtime_label = "litert-npu" if args.use_npu else "litert-gpu"
 
   r = adb("get-state")
   if r.returncode != 0 or "device" not in r.stdout:
@@ -164,14 +172,15 @@ def main():
       gate_temp(label=f"arch {arch_idx} {task}: ")
       remote_model = f"{DEVICE_ROOT}/arch_{arch_idx}/{task}_litert.tflite"
       row = {"device": DEVICE, "arch_idx": arch_idx,
-             "task": task, "runtime": "litert"}
+             "task": task, "runtime": runtime_label}
       if not device_exists(remote_model):
         row["status"] = "missing"; row["error"] = "model not on device"
       else:
         try:
-          avg_ms, std_ms = bench_task(remote_model)
+          avg_ms, std_ms = bench_task(remote_model, delegate_args)
           row["lat_ms_median"] = avg_ms
-          row["lat_ms_var"] = std_ms * std_ms
+          if std_ms is not None:
+            row["lat_ms_var"] = std_ms * std_ms
           row["status"] = "ok"
         except Exception as e:
           row["status"] = "error"; row["error"] = str(e)[:200]
