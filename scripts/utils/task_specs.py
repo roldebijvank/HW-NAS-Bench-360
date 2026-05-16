@@ -3,8 +3,14 @@ Used by host (export) and Pi daemon (random input shape).
 """
 from pathlib import Path
 import pickle
+import sys
 
 ROOT = Path(__file__).resolve().parent.parent.parent
+DATA_ROOT = ROOT / "data"
+HW_NAS_ROOT = DATA_ROOT / "hw-nas-bench"
+for p in (DATA_ROOT, HW_NAS_ROOT):
+  if str(p) not in sys.path:
+    sys.path.insert(0, str(p))
 
 NB201_API_FILE = ROOT / "data" / "nas-bench-201" / "NAS-Bench-201-v1_1-096897.pth"
 
