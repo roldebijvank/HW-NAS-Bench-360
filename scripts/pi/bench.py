@@ -1,4 +1,4 @@
-"""Phase 2 (Pi): bench arch dirs under ~/bep/archs/. Runs ON the Pi (self-
+"""Phase 2 (Pi): bench arch dirs under ~/bep/archs/ (override via --arch-root). Runs ON the Pi (self-
 contained, no scripts.utils dependency). For each arch and each task (filter
 via --task), times every runtime artifact (10 warmup + 40 timed). Pre-gates
 60C via vcgencmd and retries archs that throttle. Appends rows to
@@ -174,19 +174,19 @@ MAKERS = {
 }
 
 
-def list_arch_dirs():
-  if not ARCH_ROOT.exists(): return []
+def list_arch_dirs(arch_root):
+  if not arch_root.exists(): return []
   out = []
-  for p in ARCH_ROOT.iterdir():
+  for p in arch_root.iterdir():
     if not (p.is_dir() and p.name.startswith("arch_")): continue
     try: out.append(int(p.name.split("_", 1)[1]))
     except ValueError: continue
   return sorted(out)
 
 
-def bench_arch(arch_idx, tasks):
+def bench_arch(arch_root, arch_idx, tasks):
   rows = []
-  d = ARCH_ROOT / f"arch_{arch_idx}"
+  d = arch_root / f"arch_{arch_idx}"
   for task in tasks:
     shape = TASK_SHAPES[task]
     x_np = np.random.randn(1, *shape).astype(np.float32)
@@ -218,14 +218,17 @@ def main():
   ap.add_argument("--arch-list", type=Path, default=None)
   ap.add_argument("--limit", type=int, default=None)
   ap.add_argument("--start", type=int, default=0)
+  ap.add_argument("--arch-root", type=Path, default=ARCH_ROOT,
+                  help="Directory containing arch_* folders")
   args = ap.parse_args()
 
   tasks = args.task or list(TASK_SHAPES.keys())
   ensure_csv(CSV_PATH)
 
-  on_pi = list_arch_dirs()
+  arch_root = args.arch_root.expanduser()
+  on_pi = list_arch_dirs(arch_root)
   if not on_pi:
-    print(f"no arch_*/ under {ARCH_ROOT}; run pi/convert.py first",
+    print(f"no arch_*/ under {arch_root}; run pi/convert.py first",
           file=sys.stderr); sys.exit(2)
 
   if args.arch:
@@ -252,7 +255,7 @@ def main():
     while True:
       read_throttled()
       t0 = time.time()
-      rows = bench_arch(arch_idx, remaining)
+      rows = bench_arch(arch_root, arch_idx, remaining)
       raw = read_throttled()
       throttled = bool(raw and int(raw, 16) & 0x7) if raw else False
       if throttled:

@@ -53,14 +53,15 @@ def _apply_thread_env(threads):
     os.environ.setdefault(name, str(threads))
 
 
-def _arch_has_task_files(arch_dir, task):
-  for runtime, (ext, _) in RUNTIMES.items():
+def _arch_has_task_files(arch_dir, task, runtimes):
+  for runtime in runtimes:
+    ext, _ = RUNTIMES[runtime]
     if not (arch_dir / f"{task}_{runtime}.{ext}").is_file():
       return False
   return True
 
 
-def local_existing(task, dest_root):
+def local_existing(task, dest_root, runtimes):
   """Set of arch_idx that have all runtime artifacts for `task`."""
   if not dest_root.exists():
     return set()
@@ -72,7 +73,7 @@ def local_existing(task, dest_root):
       arch_idx = int(p.name.split("_", 1)[1])
     except ValueError:
       continue
-    if _arch_has_task_files(p, task):
+    if _arch_has_task_files(p, task, runtimes):
       out.add(arch_idx)
   return out
 
@@ -80,15 +81,17 @@ def local_existing(task, dest_root):
 _WORK_TASK = None
 _WORK_TMP = None
 _WORK_DEST = None
+_WORK_RUNTIMES = None
 _WORK_TORCH_THREADS = None
 _WORK_TORCH_INTEROP_THREADS = None
 
 
-def init_worker(task, dest_root, torch_threads, torch_interop_threads):
-  global _WORK_TASK, _WORK_TMP, _WORK_DEST
+def init_worker(task, dest_root, runtimes, torch_threads, torch_interop_threads):
+  global _WORK_TASK, _WORK_TMP, _WORK_DEST, _WORK_RUNTIMES
   global _WORK_TORCH_THREADS, _WORK_TORCH_INTEROP_THREADS
   _WORK_TASK = task
   _WORK_DEST = dest_root
+  _WORK_RUNTIMES = runtimes
   _WORK_TORCH_THREADS = torch_threads
   _WORK_TORCH_INTEROP_THREADS = torch_interop_threads
   _WORK_TMP = Path(tempfile.mkdtemp(prefix="usb_convert_"))
@@ -114,7 +117,8 @@ def process_arch(arch_idx):
   stage.mkdir()
   failures = []
   try:
-    for runtime, (ext, fn) in RUNTIMES.items():
+    for runtime in _WORK_RUNTIMES:
+      ext, fn = RUNTIMES[runtime]
       out = stage / f"{_WORK_TASK}_{runtime}.{ext}"
       try:
         with suppress_output():
@@ -126,7 +130,8 @@ def process_arch(arch_idx):
 
     dest_dir = _WORK_DEST / f"arch_{arch_idx}"
     dest_dir.mkdir(parents=True, exist_ok=True)
-    for runtime, (ext, _) in RUNTIMES.items():
+    for runtime in _WORK_RUNTIMES:
+      ext, _ = RUNTIMES[runtime]
       src = stage / f"{_WORK_TASK}_{runtime}.{ext}"
       try:
         shutil.copy2(src, dest_dir / src.name)
@@ -134,7 +139,7 @@ def process_arch(arch_idx):
         failures.append(("copy", str(e)[:200]))
     if failures:
       return arch_idx, 0, len(failures), failures
-    return arch_idx, 3, 0, []
+    return arch_idx, len(_WORK_RUNTIMES), 0, []
   finally:
     shutil.rmtree(stage, ignore_errors=True)
 
@@ -144,6 +149,9 @@ def main():
   ap.add_argument("--task", required=True, choices=list(TASKS))
   ap.add_argument("--dest", required=True, type=Path,
                   help="Directory to store arch_* folders (e.g., USB mount).")
+  ap.add_argument("--runtimes", nargs="*", choices=list(RUNTIMES),
+                  default=list(RUNTIMES.keys()),
+                  help="Subset of runtimes to export.")
   ap.add_argument("--arch", action="append", type=int, default=[])
   ap.add_argument("--arch-list", type=Path, default=None)
   ap.add_argument("--limit", type=int, default=None)
@@ -180,12 +188,13 @@ def main():
   if args.limit:
     indices = indices[:args.limit]
 
+  runtimes = list(args.runtimes)
   if args.overwrite:
     pending = indices
     skipped = 0
   else:
     print("listing existing arch dirs...", flush=True)
-    have = local_existing(args.task, dest_root)
+    have = local_existing(args.task, dest_root, runtimes)
     pending = [i for i in indices if i not in have]
     skipped = len(indices) - len(pending)
     print(f"  {len(have)} complete for {args.task}; pending {len(pending)}")
@@ -202,7 +211,8 @@ def main():
   if torch_threads is not None:
     _apply_thread_env(torch_threads)
   maxtasks = None if args.maxtasksperchild <= 0 else args.maxtasksperchild
-  print(f"task={args.task} archs={len(pending)} workers={workers} "
+  rt_label = ",".join(runtimes)
+  print(f"task={args.task} runtimes={rt_label} archs={len(pending)} workers={workers} "
         f"torch_threads={torch_threads if torch_threads is not None else 'default'} "
         f"maxtasksperchild={maxtasks if maxtasks is not None else 'none'}")
 
@@ -218,7 +228,7 @@ def main():
   ctx = mp.get_context("spawn")
   with ctx.Pool(processes=workers,
                 initializer=init_worker,
-                initargs=(args.task, dest_root, torch_threads, torch_interop),
+                initargs=(args.task, dest_root, runtimes, torch_threads, torch_interop),
                 maxtasksperchild=maxtasks) as pool:
     try:
       for arch_idx, o, e, failures in pool.imap_unordered(process_arch, pending):

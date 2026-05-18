@@ -49,7 +49,10 @@ def export_onnx(arch_idx, input_shape, num_classes, out_path):
 def export_torchmobile(arch_idx, input_shape, num_classes, out_path):
   net, sample = _wrap(arch_idx, input_shape, num_classes)
   with torch.no_grad():
-    traced = torch.jit.trace(net, sample)
+    try:
+      traced = torch.jit.trace(net, sample)
+    except Exception:
+      traced = torch.jit.trace(net, sample, check_trace=False)
     optimized = optimize_for_mobile(traced)
     optimized._save_for_lite_interpreter(str(out_path))
   size = out_path.stat().st_size
