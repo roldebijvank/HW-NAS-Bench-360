@@ -1,0 +1,6 @@
+1653	cifar100	copy	[Errno 6] Device not configured: '/var/folders/tf/kl2mrhmd3ssf79wh5mybvq040000gp/T/usb_convert_6pykpzbu/arch_1653/cifar100_onnx.onnx' -> '/Volumes/PHILIPS UFD/arch_onnx/arch_1653/cifar100_onnx.onnx'
+1646	cifar100	copy	[Errno 6] Device not configured: '/var/folders/tf/kl2mrhmd3ssf79wh5mybvq040000gp/T/usb_convert_xw9jyjw9/arch_1646/cifar100_onnx.onnx' -> '/Volumes/PHILIPS UFD/arch_onnx/arch_1646/cifar100_onnx.onnx'
+1649	cifar100	copy	[Errno 5] Input/output error: '/var/folders/tf/kl2mrhmd3ssf79wh5mybvq040000gp/T/usb_convert_xmlnaqnr/arch_1649/cifar100_onnx.onnx' -> '/Volumes/PHILIPS UFD/arch_onnx/arch_1649/cifar100_onnx.onnx'
+1650	cifar100	copy	[Errno 5] Input/output error: '/var/folders/tf/kl2mrhmd3ssf79wh5mybvq040000gp/T/usb_convert_po59hb52/arch_1650/cifar100_onnx.onnx' -> '/Volumes/PHILIPS UFD/arch_onnx/arch_1650/cifar100_onnx.onnx'
+1654	cifar100	copy	[Errno 6] Device not configured: '/var/folders/tf/kl2mrhmd3ssf79wh5mybvq040000gp/T/usb_convert_mzbagsun/arch_1654/cifar100_onnx.onnx' -> '/Volumes/PHILIPS UFD/arch_onnx/arch_1654/cifar100_onnx.onnx'
+1647	cifar100	copy	[Errno 5] Input/output error: '/var/folders/tf/kl2mrhmd3ssf79wh5mybvq040000gp/T/usb_convert_x2zcbq8l/arch_1647/cifar100_onnx.onnx' -> '/Volumes/PHILIPS UFD/arch_onnx/arch_1647/cifar100_onnx.onnx'

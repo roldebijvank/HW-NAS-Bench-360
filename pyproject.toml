@@ -23,6 +23,7 @@ dependencies = [
     "scipy==1.17.1",
     "jupyter==1.1.1",
     "python-dotenv",
+    "pyarrow>=24.0.0",
 ]
 
 [tool.uv]

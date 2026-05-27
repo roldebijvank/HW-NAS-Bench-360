@@ -38,7 +38,7 @@ def export_onnx(arch_idx, input_shape, num_classes, out_path):
   net, sample = _wrap(arch_idx, input_shape, num_classes)
   with torch.no_grad():
     torch.onnx.export(net, sample, str(out_path),
-                      input_names=["input"], output_names=["logits"], opset_version=17,
+                      input_names=["input"], output_names=["logits"], opset_version=16,
                       dynamo=False)
   size = out_path.stat().st_size
   del net, sample

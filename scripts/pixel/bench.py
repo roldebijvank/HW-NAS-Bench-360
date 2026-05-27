@@ -126,10 +126,19 @@ def main():
   ap.add_argument("--start", type=int, default=0)
   ap.add_argument("--use-npu", action="store_true",
                   help="Use NNAPI delegate instead of GPU")
+  ap.add_argument("--use-cpu", action="store_true",
+                  help="Use CPU only (no GPU/NNAPI delegates)")
   args = ap.parse_args()
 
-  delegate_args = NPU_ARGS if args.use_npu else GPU_ARGS
-  runtime_label = "litert-npu" if args.use_npu else "litert-gpu"
+  if args.use_cpu and args.use_npu:
+    raise SystemExit("choose only one of --use-cpu or --use-npu")
+
+  if args.use_cpu:
+    delegate_args = BASE_ARGS
+    runtime_label = "litert-cpu"
+  else:
+    delegate_args = NPU_ARGS if args.use_npu else GPU_ARGS
+    runtime_label = "litert-npu" if args.use_npu else "litert-gpu"
 
   r = adb("get-state")
   if r.returncode != 0 or "device" not in r.stdout:

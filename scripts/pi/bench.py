@@ -8,10 +8,12 @@ via --task), times every runtime artifact (10 warmup + 40 timed). Pre-gates
 """
 import argparse
 import csv
+import os
 import re
 import statistics
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -20,7 +22,7 @@ import numpy as np
 DATA_ROOT = Path.home() / "bep"
 ARCH_ROOT = DATA_ROOT / "archs"
 RESULTS_DIR = DATA_ROOT / "results"
-CSV_PATH = RESULTS_DIR / "latency.csv"
+CSV_PATH = RESULTS_DIR / "missing_archs.csv"
 
 DEVICE = "pi5"
 WARMUP = 10
@@ -46,6 +48,13 @@ RUNTIME_EXT = {
 CSV_COLS = ["device", "arch_idx", "task", "runtime",
             "lat_ms_median", "lat_ms_var",
             "energy_mj_median", "status", "error"]
+
+ENERGY_MARKER = "__PMIC_SAMPLE_END__"
+PMIC_LINE_RE = re.compile(
+  r"(?P<label>[A-Za-z0-9_/-]+)\s*[:=]?\s*(?P<value>[-+]?\d*\.?\d+)\s*"
+  r"(?P<unit>mV|V|mA|A|mW|W)\b",
+  re.IGNORECASE,
+)
 
 
 def ensure_csv(path):
@@ -121,14 +130,122 @@ def gate_temp(label=""):
   if t is not None and t >= TEMP_CEILING_C: cooldown(label)
 
 
-def time_loop(fn):
+def _normalize_pmic_label(label):
+  s = label.upper()
+  for suffix in ("_V", "_I", "_A", "_MA", "_MV", "_UA"):
+    if s.endswith(suffix):
+      return s[:-len(suffix)]
+  return s
+
+
+def parse_pmic_read_adc(lines):
+  if not lines: return None
+  rails = {}
+  power_mw = 0.0
+  has_power = False
+  for line in lines:
+    for m in PMIC_LINE_RE.finditer(line):
+      label = _normalize_pmic_label(m.group("label"))
+      val = float(m.group("value"))
+      unit = m.group("unit").lower()
+      if unit == "v":
+        rails.setdefault(label, {})["v"] = val
+      elif unit == "mv":
+        rails.setdefault(label, {})["v"] = val / 1000.0
+      elif unit == "a":
+        rails.setdefault(label, {})["i"] = val
+      elif unit == "ma":
+        rails.setdefault(label, {})["i"] = val / 1000.0
+      elif unit == "w":
+        power_mw += val * 1000.0
+        has_power = True
+      elif unit == "mw":
+        power_mw += val
+        has_power = True
+  if not has_power:
+    for vals in rails.values():
+      if "v" in vals and "i" in vals:
+        power_mw += vals["v"] * vals["i"] * 1000.0
+  return power_mw if power_mw > 0.0 else None
+
+
+def integrate_energy_mj(samples):
+  if len(samples) < 2: return None
+  energy_mj = 0.0
+  for i in range(1, len(samples)):
+    t0, p0 = samples[i - 1]
+    t1, p1 = samples[i]
+    dt = t1 - t0
+    if dt <= 0: continue
+    energy_mj += (p0 + p1) * 0.5 * dt
+  return energy_mj
+
+
+class EnergySampler:
+  def __init__(self, periodic_bin, vcgencmd_bin):
+    self.periodic_bin = Path(periodic_bin)
+    self.vcgencmd_bin = vcgencmd_bin
+    self.samples = []
+    self._buf = []
+    self._proc = None
+    self._thread = None
+
+  def start(self):
+    cmd = [
+      str(self.periodic_bin),
+      "/bin/sh",
+      "-c",
+      f"{self.vcgencmd_bin} pmic_read_adc; echo {ENERGY_MARKER}",
+    ]
+    self._proc = subprocess.Popen(
+      cmd,
+      stdout=subprocess.PIPE,
+      stderr=subprocess.STDOUT,
+      text=True,
+      bufsize=1,
+    )
+    self._thread = threading.Thread(target=self._reader, daemon=True)
+    self._thread.start()
+
+  def _reader(self):
+    if not self._proc or not self._proc.stdout: return
+    for line in self._proc.stdout:
+      s = line.strip()
+      if not s: continue
+      if s == ENERGY_MARKER:
+        power_mw = parse_pmic_read_adc(self._buf)
+        self._buf = []
+        if power_mw is not None:
+          self.samples.append((time.time(), power_mw))
+        continue
+      self._buf.append(s)
+
+  def stop(self):
+    if not self._proc: return None
+    self._proc.terminate()
+    try:
+      self._proc.wait(timeout=1)
+    except subprocess.TimeoutExpired:
+      self._proc.kill()
+    if self._thread:
+      self._thread.join(timeout=1)
+    return integrate_energy_mj(self.samples)
+
+
+def time_loop(fn, energy_sampler=None):
   for _ in range(WARMUP): fn()
   samples = []
-  for _ in range(TIMED):
-    t0 = time.perf_counter_ns()
-    fn()
-    samples.append((time.perf_counter_ns() - t0) / 1e6)
-  return statistics.median(samples), statistics.variance(samples)
+  energy_mj = None
+  if energy_sampler: energy_sampler.start()
+  try:
+    for _ in range(TIMED):
+      t0 = time.perf_counter_ns()
+      fn()
+      samples.append((time.perf_counter_ns() - t0) / 1e6)
+  finally:
+    if energy_sampler:
+      energy_mj = energy_sampler.stop()
+  return statistics.median(samples), statistics.variance(samples), energy_mj
 
 
 def make_step_litert(path, x_np):
@@ -184,7 +301,8 @@ def list_arch_dirs(arch_root):
   return sorted(out)
 
 
-def bench_arch(arch_root, arch_idx, tasks):
+def bench_arch(arch_root, arch_idx, tasks, energy_enabled,
+               periodic_bin, vcgencmd_bin):
   rows = []
   d = arch_root / f"arch_{arch_idx}"
   for task in tasks:
@@ -200,9 +318,14 @@ def bench_arch(arch_root, arch_idx, tasks):
       gate_temp(label=f"arch {arch_idx} {task}/{runtime}: ")
       try:
         step = MAKERS[runtime](art, x_np)
-        med, var = time_loop(step)
+        sampler = None
+        if energy_enabled:
+          sampler = EnergySampler(periodic_bin, vcgencmd_bin)
+        med, var, energy_mj = time_loop(step, sampler)
         row["lat_ms_median"] = med
         row["lat_ms_var"] = var
+        if energy_mj is not None:
+          row["energy_mj_median"] = energy_mj / TIMED
         row["status"] = "ok"
       except Exception as e:
         row["status"] = "error"; row["error"] = str(e)[:200]
@@ -220,6 +343,12 @@ def main():
   ap.add_argument("--start", type=int, default=0)
   ap.add_argument("--arch-root", type=Path, default=ARCH_ROOT,
                   help="Directory containing arch_* folders")
+  ap.add_argument("--energy", action="store_true",
+                  help="Measure energy via periodic+vcgencmd pmic_read_adc")
+  ap.add_argument("--periodic-bin", type=Path, default=DATA_ROOT / "periodic",
+                  help="Path to periodic binary")
+  ap.add_argument("--vcgencmd-bin", default="vcgencmd",
+                  help="vcgencmd binary (default: vcgencmd)")
   args = ap.parse_args()
 
   tasks = args.task or list(TASK_SHAPES.keys())
@@ -244,6 +373,14 @@ def main():
   done_per_task = {t: read_completed(RESULTS_DIR / f"completed_pi_{t}.txt")
                    for t in tasks}
 
+  energy_enabled = args.energy
+  if energy_enabled:
+    pb = args.periodic_bin.expanduser()
+    if not (pb.exists() and pb.is_file() and os.access(pb, os.X_OK)):
+      print(f"periodic not executable: {pb}; disabling energy",
+            file=sys.stderr)
+      energy_enabled = False
+
   total = len(indices)
   for i, arch_idx in enumerate(indices, 1):
     if arch_idx not in on_pi_set:
@@ -255,7 +392,14 @@ def main():
     while True:
       read_throttled()
       t0 = time.time()
-      rows = bench_arch(arch_root, arch_idx, remaining)
+      rows = bench_arch(
+        arch_root,
+        arch_idx,
+        remaining,
+        energy_enabled,
+        args.periodic_bin.expanduser(),
+        args.vcgencmd_bin,
+      )
       raw = read_throttled()
       throttled = bool(raw and int(raw, 16) & 0x7) if raw else False
       if throttled:
