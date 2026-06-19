@@ -1,7 +1,7 @@
 # data/
 
 This directory holds upstream data files required to run the pipeline.
-**None of these files are redistributed here** — download them from their
+**None of these files are redistributed here** download them from their
 original sources and place them at the paths listed below.
 
 ## Required files
