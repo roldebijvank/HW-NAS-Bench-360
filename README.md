@@ -4,7 +4,7 @@ Hardware benchmark of all 15,625 NAS-Bench-201 architectures across three
 devices (Raspberry Pi 5, Jetson Nano, Pixel 6a), three frameworks (LiteRT,
 ONNX Runtime, PyTorch Mobile), and three tasks (CIFAR-100, NinaPro,
 DarcyFlow). Latency and energy are measured on-device; the final dataset
-is the `results/dataset.parquet` file.
+is the `results/results.parquet` file.
 
 ## Dataset
 
