@@ -7,6 +7,9 @@ import os
 import statistics
 import sys
 import time
+
+if not hasattr(time, "perf_counter_ns"):
+    time.perf_counter_ns = lambda: int(time.perf_counter() * 1e9)
 from pathlib import Path
 
 import numpy as np
