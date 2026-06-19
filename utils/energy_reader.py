@@ -13,8 +13,6 @@ PMIC_LINE_RE = re.compile(
   re.IGNORECASE,
 )
 
-ENERGY_MARKER = "__PMIC_SAMPLE_END__"
-
 
 def integrate_energy_mj(samples):
   """Trapezoidal integral of power (mW) over time (s) -> mJ."""
@@ -83,57 +81,48 @@ class EnergyReader:
 
 
 class PmicEnergyReader(EnergyReader):
-  """Pi 5 PMIC sampler: periodic binary pipes vcgencmd pmic_read_adc output."""
+  """Pi 5 PMIC sampler: polls vcgencmd pmic_read_adc at ~100 Hz from a thread."""
 
-  def __init__(self, periodic_bin, vcgencmd_bin="vcgencmd"):
-    self.periodic_bin = Path(periodic_bin)
+  SAMPLE_HZ = 100.0
+
+  def __init__(self, vcgencmd_bin="vcgencmd"):
     self.vcgencmd_bin = vcgencmd_bin
     self.samples = []
-    self._buf = []
-    self._proc = None
+    self._stop = threading.Event()
     self._thread = None
+
+  def _read_power_mw(self):
+    try:
+      out = subprocess.run([self.vcgencmd_bin, "pmic_read_adc"],
+                           capture_output=True, text=True, timeout=2).stdout
+      return parse_pmic_read_adc(out.splitlines())
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+      return None
 
   def start(self):
     self.samples = []
-    self._buf = []
-    cmd = [
-      str(self.periodic_bin),
-      "/bin/sh",
-      "-c",
-      f"{self.vcgencmd_bin} pmic_read_adc; echo {ENERGY_MARKER}",
-    ]
-    self._proc = subprocess.Popen(
-      cmd,
-      stdout=subprocess.PIPE,
-      stderr=subprocess.STDOUT,
-      text=True,
-      bufsize=1,
-    )
-    self._thread = threading.Thread(target=self._reader, daemon=True)
+    self._stop.clear()
+    self._thread = threading.Thread(target=self._run, daemon=True)
     self._thread.start()
 
-  def _reader(self):
-    if not self._proc or not self._proc.stdout: return
-    for line in self._proc.stdout:
-      s = line.strip()
-      if not s: continue
-      if s == ENERGY_MARKER:
-        power_mw = parse_pmic_read_adc(self._buf)
-        self._buf = []
-        if power_mw is not None:
-          self.samples.append((time.time(), power_mw))
-        continue
-      self._buf.append(s)
+  def _run(self):
+    interval = 1.0 / self.SAMPLE_HZ
+    deadline = time.perf_counter()
+    while not self._stop.is_set():
+      p = self._read_power_mw()
+      if p is not None:
+        self.samples.append((time.perf_counter(), p))
+      deadline += interval
+      remaining = deadline - time.perf_counter()
+      if remaining > 0:
+        time.sleep(remaining)
+      else:
+        deadline = time.perf_counter()
 
   def stop(self):
-    if not self._proc: return None
-    self._proc.terminate()
-    try:
-      self._proc.wait(timeout=1)
-    except subprocess.TimeoutExpired:
-      self._proc.kill()
+    self._stop.set()
     if self._thread:
-      self._thread.join(timeout=1)
+      self._thread.join(timeout=2)
     return integrate_energy_mj(self.samples)
 
 

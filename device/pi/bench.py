@@ -3,7 +3,6 @@
   taskset -c 3 python3 ~/HW-NAS-Bench-360/device/pi/bench.py [--task cifar100] [--arch N]
 """
 import argparse
-import os
 import re
 import subprocess
 import sys
@@ -49,8 +48,7 @@ def read_throttled():
   return m.group(1) if m else None
 
 
-def bench_arch(arch_root, arch_idx, tasks, energy_enabled,
-               periodic_bin, vcgencmd_bin):
+def bench_arch(arch_root, arch_idx, tasks, energy_enabled, vcgencmd_bin):
   rows = []
   d = arch_root / f"arch_{arch_idx}"
   for task in tasks:
@@ -67,8 +65,7 @@ def bench_arch(arch_root, arch_idx, tasks, energy_enabled,
                 label=f"arch {arch_idx} {task}/{runtime}: ")
       try:
         step = MAKERS[runtime](art, x_np)
-        reader = (ENERGY_READER_CLS(periodic_bin=periodic_bin,
-                                    vcgencmd_bin=vcgencmd_bin)
+        reader = (ENERGY_READER_CLS(vcgencmd_bin=vcgencmd_bin)
                   if energy_enabled else None)
         med, var, energy_mj, n = time_loop(step, reader, timed=TIMED)
         row["lat_ms_median"] = med
@@ -93,9 +90,7 @@ def main():
   ap.add_argument("--arch-root", type=Path, default=ARCH_ROOT,
                   help="Directory containing arch_* folders")
   ap.add_argument("--energy", action="store_true",
-                  help="Measure energy via periodic+vcgencmd pmic_read_adc")
-  ap.add_argument("--periodic-bin", type=Path, default=DATA_ROOT / "periodic",
-                  help="Path to periodic binary")
+                  help="Measure energy via vcgencmd pmic_read_adc")
   ap.add_argument("--vcgencmd-bin", default="vcgencmd",
                   help="vcgencmd binary (default: vcgencmd)")
   args = ap.parse_args()
@@ -121,21 +116,13 @@ def main():
                   for t in tasks}
 
   energy_enabled = args.energy
-  if energy_enabled:
-    pb = args.periodic_bin.expanduser()
-    if not (pb.exists() and pb.is_file() and os.access(pb, os.X_OK)):
-      print(f"periodic not executable: {pb}; disabling energy",
-            file=sys.stderr)
-      energy_enabled = False
-
-  periodic_bin = args.periodic_bin.expanduser()
   vcgencmd_bin = args.vcgencmd_bin
 
   def bench_fn(arch_idx, pending_tasks):
     while True:
       read_throttled()
       rows = bench_arch(arch_root, arch_idx, pending_tasks,
-                        energy_enabled, periodic_bin, vcgencmd_bin)
+                        energy_enabled, vcgencmd_bin)
       raw = read_throttled()
       throttled = bool(raw and int(raw, 16) & 0x7) if raw else False
       if throttled:
