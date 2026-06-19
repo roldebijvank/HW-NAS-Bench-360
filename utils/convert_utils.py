@@ -1,0 +1,69 @@
+"""Per-arch export to TFLite, ONNX, TorchScript-mobile at native task shape."""
+import gc
+import logging
+import torch, torch.nn as nn
+import litert_torch
+from torch.utils.mobile_optimizer import optimize_for_mobile
+import onnx
+import numpy as np
+from config.pipeline_config import FRAMEWORKS
+from utils.model_utils import build_model
+
+
+logging.getLogger("torch.distributed.elastic.multiprocessing.redirects").disabled = True
+
+
+class LogitsOnly(nn.Module):
+  def __init__(self, m): super().__init__(); self.m = m
+  def forward(self, x):
+    out = self.m(x)
+    return out[1] if isinstance(out, (tuple, list)) and len(out) == 2 else out
+
+
+def _wrap(arch_idx, input_shape, num_classes):
+  net = build_model(arch_idx, input_shape, num_classes).eval()
+  return LogitsOnly(net).eval(), torch.randn(1, *input_shape)
+
+
+def export_tflite(arch_idx, input_shape, num_classes, out_path):
+  net, sample = _wrap(arch_idx, input_shape, num_classes)
+  with torch.no_grad():
+    edge = litert_torch.convert(net, (sample,))
+    edge.export(str(out_path))
+  size = out_path.stat().st_size
+  del net, sample, edge
+  gc.collect()
+  return size
+
+
+def export_onnx(arch_idx, input_shape, num_classes, out_path):
+  net, sample = _wrap(arch_idx, input_shape, num_classes)
+  with torch.no_grad():
+    torch.onnx.export(net, sample, str(out_path),
+                      input_names=["input"], output_names=["logits"], opset_version=13,
+                      dynamo=False)
+  size = out_path.stat().st_size
+  del net, sample
+  gc.collect()
+  return size
+
+
+def export_torchmobile(arch_idx, input_shape, num_classes, out_path):
+  net, sample = _wrap(arch_idx, input_shape, num_classes)
+  with torch.no_grad():
+    try:
+      traced = torch.jit.trace(net, sample)
+    except Exception:
+      traced = torch.jit.trace(net, sample, check_trace=False)
+    optimized = optimize_for_mobile(traced)
+    optimized._save_for_lite_interpreter(str(out_path))
+  size = out_path.stat().st_size
+  del net, sample, traced, optimized
+  gc.collect()
+  return size
+
+
+RUNTIMES = {
+  name: (info["ext"], globals()[info["exporter"]])
+  for name, info in FRAMEWORKS.items()
+}

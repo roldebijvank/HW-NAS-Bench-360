@@ -1,0 +1,55 @@
+archs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.venv/
+venv/
+env/
+ENV/
+.conda/
+.env
+.env.*
+
+# Packaging/build
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Tooling caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.pytype/
+.pyre/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+
+# Project outputs
+/artifacts/
+/results/*
+
+# Large data (fetch out-of-band)
+/data/nas-bench-201/
+/data/nb360_darcyflow/
+/data/nb360_ninapro/
+/data/hw-nas-bench/
+
+# Large model/checkpoint artifacts (not committed)
+*.pth
+*.pickle
+
+# Android benchmark binary
+/android_aarch64_benchmark_model.apk
+
+# IDE
+.vscode
+.idea
