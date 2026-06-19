@@ -35,7 +35,6 @@ dist/
 
 # Project outputs
 /artifacts/
-/results/*
 
 # Large data (fetch out-of-band)
 /data/nas-bench-201/
