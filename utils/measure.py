@@ -20,9 +20,9 @@ def time_loop(fn, energy_reader=None, warmup=WARMUP, timed=TIMED, min_window_s=0
   try:
     t_start = time.perf_counter()
     while True:
-      t0 = time.perf_counter_ns()
+      t0 = time.perf_counter()
       fn()
-      samples.append((time.perf_counter_ns() - t0) / 1e6)
+      samples.append((time.perf_counter() - t0) * 1e3)
       if len(samples) >= timed and (time.perf_counter() - t_start) >= min_window_s:
         break
   finally:

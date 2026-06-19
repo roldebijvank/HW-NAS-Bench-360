@@ -60,6 +60,15 @@ Results: `results/latency_pi.csv`
 **Jetson Nano**
 ```
 pip install -r device/jetson/requirements.txt
+```
+
+`onnxruntime-gpu` has no PyPI wheel for aarch64; install it manually (JP4.6 / Python 3.6):
+```
+wget -O onnxruntime_gpu-1.11.0-cp36-cp36m-linux_aarch64.whl https://nvidia.box.com/shared/static/pmsqsiaw4pg9qrbeckcbymho6c01jj4z.whl
+pip3 install onnxruntime_gpu-1.11.0-cp36-cp36m-linux_aarch64.whl
+```
+
+```
 taskset -c 0 python3 device/jetson/bench.py --energy [--task cifar100] [--arch-root /path/to/archs]
 ```
 Results: `results/latency_jetson.csv`
