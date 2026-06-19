@@ -8,12 +8,11 @@ is the `results/results.parquet` file.
 
 ## Dataset
 
-`results/dataset.parquet` is the citable deliverable. It is **not committed
-here** — download it from Zenodo/HuggingFace (link TBD). Schema:
+Schema for `results/dataset.parquet`:
 
 | column | description |
 |---|---|
-| `arch_idx` | NB201 architecture index 0–15624 |
+| `arch_idx` | NB201 architecture index 0-15624 |
 | `device` | `pi5` / `jetson` / `pixel` |
 | `framework` | `litert` / `onnx` / `torchmobile` |
 | `task` | `cifar100` / `ninapro` / `darcy` |
@@ -27,22 +26,17 @@ representative (~6466 unique structures measured, expanded to 15625 rows).
 
 ## Pipeline
 
-### Stage 1 — Export model artifacts (host)
+### Stage 1: Export model artifacts (host)
 
 Export NB201 models for one task to the target device. Requires PyTorch,
 litert-torch, onnxruntime, and the data files listed in `data/README.md`.
-
-**Pi (rsync to device over SSH — set `RPI_HOST=user@host` in env):**
-```
-python -m host.pi.convert --task cifar100
-```
 
 **USB (copy to local directory for Jetson):**
 ```
 python -m host.usb.convert --task cifar100 --dest /Volumes/USB/archs
 ```
 
-**Pixel (adb push — device must be connected):**
+**Pixel (adb push, device must be connected):**
 ```
 python -m host.pixel.convert
 ```
@@ -50,54 +44,37 @@ python -m host.pixel.convert
 Repeat for `ninapro` and `darcy`. Non-isomorphic representatives only by
 default; pass `--all` for all 15625.
 
-### Stage 2 — Measure latency & energy (on-device)
+### Stage 2: Measure latency & energy (on-device)
 
 Each device needs:
-1. This repo cloned at the path shown below.
+1. This repo cloned on the device.
 2. Device-specific Python packages installed (`device/<device>/requirements.txt`).
-3. Model artifacts transferred in Stage 1 (arch dirs in the archs/ path shown).
-
-**Pi 5**
-
-Clone repo to `~/HW-NAS-Bench-360/`. Artifacts land in
-`~/HW-NAS-Bench-360/archs/` (via rsync in Stage 1).
-```
-cd ~/HW-NAS-Bench-360
-pip install -r device/pi/requirements.txt
-taskset -c 3 python3 device/pi/bench.py [--energy] [--task cifar100]
-```
-Results: `~/HW-NAS-Bench-360/results/latency.csv`
+3. Model artifacts from Stage 1, pass the path via `--arch-root`.
 
 **Jetson Nano**
-
-Clone repo to `~/HW-NAS-Bench-360/`. Copy USB artifacts to
-`~/HW-NAS-Bench-360/archs/`.
 ```
-cd ~/HW-NAS-Bench-360
 pip install -r device/jetson/requirements.txt
-taskset -c 0 python3 device/jetson/bench.py --energy [--task cifar100]
+taskset -c 0 python3 device/jetson/bench.py --energy [--task cifar100] [--arch-root /path/to/archs]
 ```
-Results: `~/HW-NAS-Bench-360/results/latency.csv`
+Results: `results/latency.csv`
 
 **Pixel 6a**
 
-Inside proot-distro Ubuntu: clone repo to `~/HW-NAS-Bench-360/`. Artifacts
-land in `~/HW-NAS-Bench-360/archs/` (adb-pushed in Stage 1 to
-`/data/local/tmp/archs/`, then moved into the proot home before running).
+Inside proot-distro Ubuntu. Artifacts are adb-pushed in Stage 1 to
+`/data/local/tmp/archs/`; move them into the proot home before running.
 ```
-cd ~/HW-NAS-Bench-360
 pip install -r device/pixel/requirements.txt
-python3 device/pixel/bench.py [--task cifar100] [--framework litert]
+python3 device/pixel/bench.py [--task cifar100] [--framework litert] [--arch-root /path/to/archs]
 ```
-Results: `~/HW-NAS-Bench-360/results/latency_pixel.csv`
+Results: `results/latency_pixel.csv`
 
-### Stage 3 — Export accuracy values (host)
+### Stage 3: Export accuracy values (host)
 
 ```
 python -m utils.export_arch_accuracies --out results/accuracies_by_arch.csv
 ```
 
-### Stage 4 — Build dataset (host)
+### Stage 4: Build dataset (host)
 
 ```
 python -m utils.build_dataset \
@@ -109,7 +86,7 @@ python -m utils.build_dataset \
   --out results/dataset.parquet
 ```
 
-### Stage 5 — Query and analyse
+### Stage 5: Query and analyse
 
 ```python
 import api
@@ -141,7 +118,7 @@ python3 calibration/jetson/sample_rate_probe.py --dur-s 5
 
 ### Add a new task
 
-1. **`config/pipeline_config.py`** — add an entry to `TASKS`:
+1. **`config/pipeline_config.py`**: add an entry to `TASKS`:
    ```python
    "mytask": {
        "input_shape": (C, H, W),
@@ -151,7 +128,7 @@ python3 calibration/jetson/sample_rate_probe.py --dur-s 5
        "acc_inner_key": ("mytask", 777),
    },
    ```
-2. **`utils/task_specs.py`** — if using a new pickle format, add a branch in
+2. **`utils/task_specs.py`**: if using a new pickle format, add a branch in
    `load_accuracies` to handle it. Existing `nb360_pickle` and `nb201_api`
    sources require no changes.
 3. **Stage 1**: re-run `host/*/convert.py --task mytask` to export models.
@@ -161,23 +138,23 @@ python3 calibration/jetson/sample_rate_probe.py --dur-s 5
 
 ### Add a new framework
 
-1. **`config/pipeline_config.py`** — add an entry to `FRAMEWORKS`:
+1. **`config/pipeline_config.py`**: add an entry to `FRAMEWORKS`:
    ```python
    "myfw": {"ext": "myext", "exporter": "export_myfw"},
    ```
-2. **`utils/convert_utils.py`** — implement `export_myfw(arch_idx, input_shape,
+2. **`utils/convert_utils.py`**: implement `export_myfw(arch_idx, input_shape,
    num_classes, out_path)` and ensure it appears in `RUNTIMES` (auto-built from
    `FRAMEWORKS`).
-3. **`utils/runners.py`** — implement `make_step_myfw(path, x_np)` and add it
+3. **`utils/runners.py`**: implement `make_step_myfw(path, x_np)` and add it
    to `MAKERS`.
-4. **`config/pipeline_config.py`** — add `"myfw"` to the `"frameworks"` list of
+4. **`config/pipeline_config.py`**: add `"myfw"` to the `"frameworks"` list of
    each device that should run it.
 5. Stage 1 and Stage 2 pick up the new framework automatically via
    `RUNTIMES` / `RUNTIME_EXT`.
 
 ### Add a new device
 
-1. **`config/pipeline_config.py`** — add an entry to `DEVICES`:
+1. **`config/pipeline_config.py`**: add an entry to `DEVICES`:
    ```python
    "mydevice": {
        "frameworks": ("litert", "onnx"),
@@ -185,16 +162,16 @@ python3 calibration/jetson/sample_rate_probe.py --dur-s 5
        "temp_reader": my_temp_fn,         # or None
    },
    ```
-2. **`utils/energy_reader.py`** — if needed, implement a new `EnergyReader`
+2. **`utils/energy_reader.py`**: if needed, implement a new `EnergyReader`
    subclass with `start()` and `stop() -> float | None` (mJ).
-3. **`device/mydevice/bench.py`** — copy the closest existing bench script and
+3. **`device/mydevice/bench.py`**: copy the closest existing bench script and
    replace device-specific constants (`DEVICE`, `DATA_ROOT`, `TEMP_*`,
    `CSV_COLS`) and any device-only logic (affinity pinning, idle-power
    resampling, throttle retry). Call `run_bench_loop` with the appropriate
    `pending_fn`, `bench_fn`, and `mark_done_fn`.
-4. **`host/mydevice/convert.py`** (or reuse `host/usb/convert.py`) — add a
+4. **`host/mydevice/convert.py`** (or reuse `host/usb/convert.py`): add a
    transfer script for Stage 1.
-5. **`utils/build_dataset.py`** — add a `load_mydevice(path)` function mirroring
+5. **`utils/build_dataset.py`**: add a `load_mydevice(path)` function mirroring
    the existing loaders, and include it in `main()`.
 
 ## Requirements
