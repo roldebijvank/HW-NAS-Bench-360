@@ -1,4 +1,4 @@
-"""Shared outer loop for device bench scripts."""
+"""Shared arch-iteration loop used by all device bench scripts."""
 import time
 from pathlib import Path
 

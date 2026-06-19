@@ -1,8 +1,4 @@
-"""
-Bench arch dirs.
-For each arch and each task (filter via --task), times every runtime artifact
-(10 warmup + 40 timed). Pre-gates 60C via vcgencmd and retries archs that
-throttle. Appends rows to results/latency.csv and results/completed_pi_<task>.txt.
+"""Bench arch dirs on Pi5 across all frameworks measuring latency and PMIC energy.
 
   taskset -c 3 python3 ~/HW-NAS-Bench-360/device/pi/bench.py [--task cifar100] [--arch N]
 """
@@ -25,7 +21,7 @@ from utils.bench_loop import list_arch_dirs, run_bench_loop
 DATA_ROOT = Path.home() / "HW-NAS-Bench-360"
 ARCH_ROOT = DATA_ROOT / "archs"
 RESULTS_DIR = DATA_ROOT / "results"
-CSV_PATH = RESULTS_DIR / "latency.csv"
+CSV_PATH = RESULTS_DIR / "latency_pi.csv"
 
 DEVICE = "pi5"
 TIMED  = 40
@@ -109,7 +105,7 @@ def main():
   arch_root = args.arch_root.expanduser()
   on_pi = list_arch_dirs(arch_root)
   if not on_pi:
-    print(f"no arch_*/ under {arch_root}; run host/pi/convert.py first",
+    print(f"no arch_*/ under {arch_root}; run host/convert.py first",
           file=sys.stderr); sys.exit(2)
 
   if args.arch:

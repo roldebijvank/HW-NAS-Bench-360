@@ -1,3 +1,4 @@
+"""Builds a NB201 PyTorch model for a given arch index, task shape, and class count."""
 from pathlib import Path
 import sys
 

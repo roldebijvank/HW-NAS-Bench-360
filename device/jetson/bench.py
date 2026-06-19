@@ -1,16 +1,4 @@
-"""Phase 2 (Jetson): bench arch dirs under ~/HW-NAS-Bench-360/archs/ (override via --arch-root).
-ONNX Runtime only. For each arch and each task (filter via --task), times the
-onnx artifact (10 warmup + 40 timed, min wall-clock window 0.5s). Pre-gates
-90C via /sys/class/thermal and retries archs that stay hot. Appends rows to
-~/HW-NAS-Bench-360/results/latency.csv and
-~/HW-NAS-Bench-360/results/completed_jetson_<task>.txt.
-
-Energy: measured via the on-board INA3221 monitor on the POM_5V_IN rail (total
-board input power). A background thread polls the sysfs power node at ~550 Hz
-and integrates power over time by trapezoidal summation (E = sum P_i*dt_i) to
-millijoules. 10 warmup passes precede measurement; the monitor is started
-immediately before the 40 timed passes and stopped directly after, bounding the
-energy window to the latency window. Reported value includes board idle draw.
+"""Bench arch dirs on Jetson Nano (ONNX only) measuring latency and INA3221 board energy.
 
   taskset -c 0 python3 ~/HW-NAS-Bench-360/device/jetson/bench.py --energy [--task cifar100] [--arch N]
 """
@@ -33,7 +21,7 @@ from utils.bench_loop import list_arch_dirs, run_bench_loop
 DATA_ROOT = Path.home() / "HW-NAS-Bench-360"
 ARCH_ROOT = DATA_ROOT / "archs"
 RESULTS_DIR = DATA_ROOT / "results"
-CSV_PATH = RESULTS_DIR / "latency.csv"
+CSV_PATH = RESULTS_DIR / "latency_jetson.csv"
 
 DEVICE = "jetson"
 TIMED  = 40

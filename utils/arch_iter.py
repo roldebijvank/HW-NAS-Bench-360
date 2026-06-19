@@ -1,6 +1,4 @@
-"""Iterate non-isomorphic NB201 arch indices (~6466).
-Canonicalizes arch_str via Structure.to_unique_str, keeps first occurrence.
-"""
+"""Yields the ~6466 non-isomorphic NB201 arch indices (deduped via Structure.to_unique_str)."""
 from pathlib import Path
 import sys, pickle, warnings
 import numpy as np

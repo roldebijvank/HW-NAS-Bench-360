@@ -1,4 +1,4 @@
-"""Shared helpers for Pi and Pixel runners."""
+"""Shared CSV/progress helpers used by Pi and Pixel bench scripts."""
 from pathlib import Path
 import contextlib
 import csv

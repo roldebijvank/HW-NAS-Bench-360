@@ -1,22 +1,6 @@
-"""Read-only API over results/dataset.parquet.
+"""Read-only API over results/dataset.parquet (load, query, pareto, aggregate).
 
-Schema: each row is an architecture-device-framework-task combination with
-columns: arch_idx, device, framework, task, lat_ms, lat_ms_var, energy_mj,
-accuracy. The table covers all 15,625 architectures; isomorphic architectures
-share metrics with their non-isomorphic representatives.
-
-`accuracy` semantics per task: cifar100/ninapro = test accuracy (higher
-better); darcy = relative L2 error (lower better).
-
-Pass `non_isomorphic=True` to any query to restrict to the ~6466
-non-isomorphic NB201 representatives (drops isomorphic duplicates).
-
-API:
-  load(non_isomorphic) -> DataFrame
-  query(arch_index, task, framework, device) -> dict
-  query_task(task, framework, device, non_isomorphic) -> DataFrame
-  get_pareto_front(task, device, framework, minimise, maximise, non_isomorphic) -> DataFrame
-  aggregate(by, metric, agg, non_isomorphic) -> DataFrame
+  python api.py
 """
 from __future__ import annotations
 from functools import lru_cache
@@ -24,7 +8,7 @@ from pathlib import Path
 from typing import Sequence
 import pandas as pd
 
-PARQUET = Path(__file__).resolve().parent / "results" / "dataset.parquet"
+PARQUET = Path(__file__).resolve().parent / "results" / "results.parquet"
 
 REQUIRED_COLUMNS = (
   "arch_idx",

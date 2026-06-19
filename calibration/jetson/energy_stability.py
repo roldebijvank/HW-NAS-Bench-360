@@ -1,28 +1,7 @@
-"""Find how many INA3221 samples per measurement give stable energy/inference
-on the Jetson Nano (ONNX Runtime).
-
-Mirrors scripts/utils/energy_stability.py but uses the jetson/bench.py
-methodology: total board power on the POM_5V_IN rail (includes idle draw),
-polled at ~550Hz, integrated by trapezoidal summation to millijoules, divided
-by the inference count in the window. No idle subtraction (same as bench.py).
-
-Self-contained (no scripts.* imports) so it can be copied to the Jetson
-alongside bench.py.
-
-Procedure:
-  1. Warm up the model (10 passes).
-  2. Run it in a tight loop for `--total-s` seconds while a background thread
-     polls in_power0_input at ~550Hz, recording (t, power_mW, cumulative infs).
-  3. For each candidate sample-count N in `--sizes`, slice the stream into
-     non-overlapping N-sample windows; each window yields one synthetic
-     measurement = trapezoidal energy / inferences in the window.
-  4. Report mean/median/std/CV/IQR across windows, and the smallest N whose
-     chunk-to-chunk CV <= `--tol-pct`.
+"""Find minimum INA3221 sample count for stable energy/inference on Jetson Nano (ONNX).
 
   python3 ~/HW-NAS-Bench-360/calibration/jetson/energy_stability.py \
-    --arch-index 0 --task cifar100 \
-    --model-path /mnt/usb/archs/arch_0/cifar100_onnx.onnx \
-    --total-s 60
+    --arch-index 0 --task cifar100 --model-path <path> --total-s 60
 """
 import argparse
 import csv

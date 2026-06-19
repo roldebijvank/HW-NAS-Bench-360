@@ -1,27 +1,8 @@
-"""Find how many samples per measurement give stable energy/inference on rpi.
-
-A real measurement (device/pi/bench.py) collects N power samples at 100 Hz
-during inference, computes sum((p - idle) * dt) / n_inferences. Stability
-of a measurement = chunk-to-chunk variability of that quantity when the model
-is run continuously and the sample stream is sliced into independent
-non-overlapping windows of size N.
-
-Procedure:
-  1. Warm up + measure idle baseline.
-  2. Run the chosen model in a tight loop for `--total-s` seconds, sampling
-     power at 100 Hz. Per sample, record cumulative inference count.
-  3. For each candidate sample-count N in `--sizes`, slice the stream into
-     non-overlapping chunks of N samples. Each chunk yields one synthetic
-     measurement using the exact bench.py formula. Compute mean, median,
-     std, CV across chunks.
-  4. Report smallest N with CV <= `--tol-pct`.
-
-Run from repo root on the Pi:
+"""Find minimum sample count for stable energy/inference on Pi5 (PMIC at 100 Hz).
 
   python3 ~/HW-NAS-Bench-360/calibration/pi/energy_stability.py \
     --arch-index 0 --task cifar100 --framework litert \
-    --model-path ~/HW-NAS-Bench-360/archs/arch_0/cifar100_litert.tflite \
-    --total-s 60
+    --model-path <path> --total-s 60
 """
 import argparse
 import csv

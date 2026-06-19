@@ -1,21 +1,6 @@
-"""Probe the achievable INA3221 polling rate on the Jetson Nano.
+"""Probe max INA3221 polling rate on Jetson Nano by sweeping candidate rates and counting misses.
 
-bench.py / energy_stability.py poll the POM_5V_IN power node at a fixed
-SAMPLE_HZ (550). This script sweeps a set of candidate target rates and, for
-each, polls the node for `--dur-s` seconds, counting how often the loop misses
-its deadline (the read + sleep overran the sample interval) and how many reads
-errored. Prints an overview so you can pick the highest rate that still keeps
-misses low.
-
-A "miss" = after reading the node and accounting for time spent, no time
-remained before the next scheduled tick (remaining <= 0); the deadline is reset
-to now (same recovery as bench.py's sampler). High miss% means the target rate
-is faster than the node can actually be read at.
-
-Self-contained (no scripts.* imports) so it can be copied to the Jetson.
-
-  sudo python3 ~/sample_rate_probe.py --dur-s 5
-  python3 ~/sample_rate_probe.py --rates 200,400,550,800,1000 --dur-s 10
+  sudo python3 ~/HW-NAS-Bench-360/calibration/jetson/sample_rate_probe.py --dur-s 5
 """
 import argparse
 import statistics

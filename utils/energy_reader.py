@@ -1,7 +1,4 @@
-"""EnergyReader base class plus Pi5 (PMIC) and Jetson (INA3221) implementations.
-Each subclass exposes start() -> None and stop() -> float | None, where stop
-returns total integrated energy in millijoules over the sampling window.
-"""
+"""EnergyReader base class with Pi5 (PMIC) and Jetson (INA3221) subclasses; stop() returns mJ."""
 import os
 import re
 import subprocess

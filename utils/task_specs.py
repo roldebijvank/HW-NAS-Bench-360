@@ -1,6 +1,4 @@
-"""Per-task accuracy loaders. TASKS is centralized in scripts/config/pipeline_config.py.
-Used by host (export) and Pi daemon (random input shape).
-"""
+"""Per-task accuracy loaders (NB201 API and Darcy). TASKS sourced from pipeline_config."""
 from pathlib import Path
 import pickle
 import sys

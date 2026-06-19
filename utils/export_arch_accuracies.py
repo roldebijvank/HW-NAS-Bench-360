@@ -1,4 +1,7 @@
-"""Export per-arch accuracies for all tasks into a single CSV."""
+"""Export per-arch accuracies for all tasks to a single CSV.
+
+  python utils/export_arch_accuracies.py [--out results/accuracies_by_arch.csv]
+"""
 from pathlib import Path
 import argparse
 import csv

@@ -1,4 +1,4 @@
-"""Unified time_loop, temperature gate, and stock temp readers."""
+"""Shared time_loop (warmup+timed), temperature gate, and device temp readers."""
 import glob
 import re
 import statistics

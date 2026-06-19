@@ -4,11 +4,11 @@ Hardware benchmark of all 15,625 NAS-Bench-201 architectures across three
 devices (Raspberry Pi 5, Jetson Nano, Pixel 6a), three frameworks (LiteRT,
 ONNX Runtime, PyTorch Mobile), and three tasks (CIFAR-100, NinaPro,
 DarcyFlow). Latency and energy are measured on-device; the final dataset
-is the `results/results.parquet` file.
+is the `results/dataset.parquet` file.
 
 ## Dataset
 
-Schema for `results/dataset.parquet`:
+Schema for `results/results.parquet`:
 
 | column | description |
 |---|---|
@@ -31,18 +31,17 @@ representative (~6466 unique structures measured, expanded to 15625 rows).
 Export NB201 models for one task to the target device. Requires PyTorch,
 litert-torch, onnxruntime, and the data files listed in `data/README.md`.
 
-**USB (copy to local directory for Jetson):**
 ```
-python -m host.usb.convert --task cifar100 --dest /Volumes/USB/archs
-```
-
-**Pixel (adb push, device must be connected):**
-```
-python -m host.pixel.convert
+python -m host.convert --task cifar100 --dest /Volumes/USB/archs
 ```
 
 Repeat for `ninapro` and `darcy`. Non-isomorphic representatives only by
 default; pass `--all` for all 15625.
+
+For Pixel 6a, push the exported directory to the device via adb:
+```
+adb push /path/to/archs /data/local/tmp/archs
+```
 
 ### Stage 2: Measure latency & energy (on-device)
 
@@ -51,12 +50,19 @@ Each device needs:
 2. Device-specific Python packages installed (`device/<device>/requirements.txt`).
 3. Model artifacts from Stage 1, pass the path via `--arch-root`.
 
+**Raspberry Pi 5**
+```
+pip install -r device/pi/requirements.txt
+taskset -c 3 python3 device/pi/bench.py [--energy] [--task cifar100] [--arch-root /path/to/archs]
+```
+Results: `results/latency_pi.csv`
+
 **Jetson Nano**
 ```
 pip install -r device/jetson/requirements.txt
 taskset -c 0 python3 device/jetson/bench.py --energy [--task cifar100] [--arch-root /path/to/archs]
 ```
-Results: `results/latency.csv`
+Results: `results/latency_jetson.csv`
 
 **Pixel 6a**
 
@@ -78,12 +84,12 @@ python -m utils.export_arch_accuracies --out results/accuracies_by_arch.csv
 
 ```
 python -m utils.build_dataset \
-  --pi results/pi.csv \
-  --jetson results/jetson.csv \
-  --pixel results/pixel.csv \
+  --pi results/latency_pi.csv \
+  --jetson results/latency_jetson.csv \
+  --pixel results/latency_pixel.csv \
   --accuracy results/accuracies_by_arch.csv \
   --hw-pickle data/hw-nas-bench/HW-NAS-Bench-v1_0.pickle \
-  --out results/dataset.parquet
+  --out results/results.parquet
 ```
 
 ### Stage 5: Query and analyse
@@ -131,7 +137,7 @@ python3 calibration/jetson/sample_rate_probe.py --dur-s 5
 2. **`utils/task_specs.py`**: if using a new pickle format, add a branch in
    `load_accuracies` to handle it. Existing `nb360_pickle` and `nb201_api`
    sources require no changes.
-3. **Stage 1**: re-run `host/*/convert.py --task mytask` to export models.
+3. **Stage 1**: re-run `host/convert.py --task mytask` to export models.
 4. **Stage 2**: pass `--task mytask` to the device bench script.
 5. **Stage 3**: re-run `utils/export_arch_accuracies.py`; the new task is
    picked up automatically via `TASKS`.
@@ -169,8 +175,8 @@ python3 calibration/jetson/sample_rate_probe.py --dur-s 5
    `CSV_COLS`) and any device-only logic (affinity pinning, idle-power
    resampling, throttle retry). Call `run_bench_loop` with the appropriate
    `pending_fn`, `bench_fn`, and `mark_done_fn`.
-4. **`host/mydevice/convert.py`** (or reuse `host/usb/convert.py`): add a
-   transfer script for Stage 1.
+4. **Stage 1**: use `host/convert.py` to export artifacts, then transfer them
+   to the device (e.g., via USB or adb push).
 5. **`utils/build_dataset.py`**: add a `load_mydevice(path)` function mirroring
    the existing loaders, and include it in `main()`.
 

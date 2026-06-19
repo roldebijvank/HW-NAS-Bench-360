@@ -1,4 +1,4 @@
-"""Framework runners: make_step_<framework>(path, x_np, **kwargs) -> step callable."""
+"""Returns a step() callable for each framework (litert, onnx, torchmobile)."""
 
 
 _ONNX_PROVIDERS_LOGGED = False

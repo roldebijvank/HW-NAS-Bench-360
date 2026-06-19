@@ -1,8 +1,4 @@
-"""Central pipeline config: tasks, frameworks, devices.
-
-Importable from host (export, accuracy join) and from device bench scripts
-(Pi/Jetson/Pixel).
-"""
+"""Central config: tasks, frameworks, devices. Imported by host and device bench scripts."""
 from pathlib import Path
 
 from utils.energy_reader import PmicEnergyReader, Ina3221EnergyReader

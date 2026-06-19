@@ -1,11 +1,5 @@
-"""Phase 2 (Pixel): bench arch dirs inside proot-distro Ubuntu on the Pixel 6a.
-All three frameworks (litert, onnx, torchmobile), CPU only, no energy.
-For each arch and task, times the artifact (10 warmup + 40 timed,
-min wall-clock window 0.5s). Pre-gates 45C via /sys/class/thermal.
-Appends rows to results/latency_pixel.csv and
-results/completed_pixel_<task>_<framework>.txt.
+"""Bench arch dirs on Pixel 6a (all frameworks, CPU only, no energy) inside proot-distro Ubuntu.
 
-Run inside proot-distro Ubuntu on the Pixel 6a:
   python3 ~/HW-NAS-Bench-360/device/pixel/bench.py [--task cifar100] [--framework litert]
 """
 import argparse
@@ -17,7 +11,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
-from config.pipeline_config import TASKS, FRAMEWORKS
+from config.pipeline_config import TASKS, FRAMEWORKS, DEVICES
 from utils.measure import gate_temp, time_loop
 from utils.runners import MAKERS
 from utils.runner_utils import read_completed, parse_arch_list
@@ -37,7 +31,7 @@ TEMP_CEILING_C = 45.0
 TEMP_RESUME_C = 40.0
 
 TASK_SHAPES = {t: TASKS[t]["input_shape"] for t in TASKS}
-RUNTIME_EXT = {n: FRAMEWORKS[n]["ext"] for n in FRAMEWORKS}
+RUNTIME_EXT = {n: FRAMEWORKS[n]["ext"] for n in DEVICES[DEVICE]["frameworks"]}
 
 CSV_COLS = ["device", "arch_idx", "task", "runtime",
             "lat_ms_median", "lat_ms_var",

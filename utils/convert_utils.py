@@ -1,4 +1,4 @@
-"""Per-arch export to TFLite, ONNX, TorchScript-mobile at native task shape."""
+"""Exports a single arch to TFLite, ONNX, and TorchScript-mobile at the task input shape."""
 import gc
 import logging
 import torch, torch.nn as nn

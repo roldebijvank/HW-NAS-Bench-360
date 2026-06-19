@@ -1,7 +1,6 @@
-"""Export per-arch artifacts for one task to a local directory (e.g., USB).
+"""Export all framework artifacts per (arch, task) to a local directory (e.g., USB drive).
 
-Run as module so imports work:
-  uv run python -m scripts.usb.convert --task cifar100 --dest /Volumes/USB/archs
+  uv run python -m host.convert --task cifar100 --dest /Volumes/USB/archs
 """
 import argparse
 import atexit
@@ -19,7 +18,7 @@ from utils.runner_utils import (parse_arch_list, show_progress,
                                         suppress_output)
 from utils.task_specs import TASKS
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _int_env(name, default):
@@ -94,7 +93,7 @@ def init_worker(task, dest_root, runtimes, torch_threads, torch_interop_threads)
   _WORK_RUNTIMES = runtimes
   _WORK_TORCH_THREADS = torch_threads
   _WORK_TORCH_INTEROP_THREADS = torch_interop_threads
-  _WORK_TMP = Path(tempfile.mkdtemp(prefix="usb_convert_"))
+  _WORK_TMP = Path(tempfile.mkdtemp(prefix="convert_"))
   atexit.register(shutil.rmtree, _WORK_TMP, ignore_errors=True)
   silence_torch_elastic_redirects()
   if _WORK_TORCH_THREADS is not None or _WORK_TORCH_INTEROP_THREADS is not None:
@@ -220,7 +219,7 @@ def main():
   done = skipped
   ok_a = 0
   err_a = 0
-  fail_log = ROOT / "results" / "convert_usb_failed.log"
+  fail_log = ROOT / "results" / "convert_failed.log"
   fail_log.parent.mkdir(parents=True, exist_ok=True)
   failed_archs = []
 

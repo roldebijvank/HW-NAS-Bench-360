@@ -1,3 +1,7 @@
+"""Merge raw device CSVs, expand to all 15,625 archs via iso-map, and write results/dataset.parquet.
+
+  python utils/build_dataset.py [--out results/dataset.parquet]
+"""
 import argparse
 import json
 import numpy as np
